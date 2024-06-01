@@ -34,6 +34,7 @@ dependencies:
   web_socket_channel: ^3.0.0
   geolocator: ^12.0.0
   permission_handler: ^11.3.1
+  firebase_storage: ^11.7.7
 
 
 
@@ -47,6 +48,9 @@ dev_dependencies:
     sdk: flutter
   intl_phone_field: ^3.2.0
   image_picker: ^1.1.1
+  cloud_firestore: ^4.7.0
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.20.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

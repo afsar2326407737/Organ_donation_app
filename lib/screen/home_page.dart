@@ -1,5 +1,7 @@
+import 'package:firstproject/screen/Reciver_Side.dart';
 import 'package:firstproject/screen/donar_side.dart';
-import 'package:firstproject/screen/signup_page.dart';
+import 'package:firstproject/screen/hospital_login.dart';
+import 'package:firstproject/screen/hospital_signup.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -41,12 +43,18 @@ class HomePage extends StatelessWidget {
               },
               child: const Text('Donar Side'),
             ),
+            SizedBox(height: 20,),
+            ElevatedButton(onPressed: (){
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HospitalSignup()));
+            }, child: const Text("Hospital")),
             const SizedBox(height: 20), // Add some space between the buttons
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SignUpScreen()),
+                  MaterialPageRoute(builder: (context) => const ReciverSide()),
                 );
                 // Define what happens when the button is pressed
               },

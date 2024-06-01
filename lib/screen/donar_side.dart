@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'location_service.dart'; // Import location_service.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'location_service.dart';
 
 class DonorSidePage extends StatefulWidget {
   const DonorSidePage({Key? key}) : super(key: key);
@@ -12,13 +13,22 @@ class DonorSidePage extends StatefulWidget {
 
 class _DonorSidePageState extends State<DonorSidePage> {
   String? _selectedGender;
-  TextEditingController _datecontroller = TextEditingController();
+  TextEditingController _dateController = TextEditingController();
   late TextEditingController _usernameController;
   late TextEditingController _ageController;
   late TextEditingController _organNameController;
-  File? _image; // Add variable to store selected image
-  String _location = 'Unknown'; // Add variable to store location
-  final LocationService _locationService = LocationService(); // Initialize LocationService
+  late TextEditingController _bloodgroup;
+  File? _image;
+  String _location = 'Unknown';
+  final LocationService _locationService = LocationService();
+
+  var items = [
+    'Kinathukadavu Hospital',
+    'Nivetha Hospital',
+    'Ashok Hospital',
+    'Apollo Hospital'
+  ];
+  String? _selectedHospital;
 
   @override
   void initState() {
@@ -26,6 +36,7 @@ class _DonorSidePageState extends State<DonorSidePage> {
     _usernameController = TextEditingController();
     _ageController = TextEditingController();
     _organNameController = TextEditingController();
+    _bloodgroup = TextEditingController();
   }
 
   @override
@@ -33,7 +44,7 @@ class _DonorSidePageState extends State<DonorSidePage> {
     _usernameController.dispose();
     _ageController.dispose();
     _organNameController.dispose();
-    _datecontroller.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -42,7 +53,7 @@ class _DonorSidePageState extends State<DonorSidePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Donor Side'),
-        backgroundColor: Colors.green, // Set app bar color to green
+        backgroundColor: Colors.green,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -60,11 +71,20 @@ class _DonorSidePageState extends State<DonorSidePage> {
                   ),
                 ),
               ),
+              SizedBox(height: 20,),
+              TextField(
+                controller: _bloodgroup,
+                decoration: InputDecoration(
+                  labelText: 'Blood Group',
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
               SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: () {
-                  _pickImage();
-                },
+                onPressed: _pickImage,
                 icon: Icon(Icons.image),
                 label: Text('Select Image'),
               ),
@@ -104,9 +124,9 @@ class _DonorSidePageState extends State<DonorSidePage> {
               MouseRegion(
                 cursor: SystemMouseCursors.text,
                 child: TextField(
-                  controller: _datecontroller,
+                  controller: _dateController,
                   decoration: InputDecoration(
-                    labelText: "Dead Line Date of Organ",
+                    labelText: "Deadline Date of Organ",
                     filled: true,
                     prefixIcon: Icon(Icons.calendar_today),
                     border: OutlineInputBorder(
@@ -114,9 +134,7 @@ class _DonorSidePageState extends State<DonorSidePage> {
                     ),
                   ),
                   readOnly: true,
-                  onTap: () {
-                    _selectDate();
-                  },
+                  onTap: _selectDate,
                 ),
               ),
               SizedBox(height: 20),
@@ -154,23 +172,43 @@ class _DonorSidePageState extends State<DonorSidePage> {
                   });
                 },
               ),
-              SizedBox(height: 20,),
+              SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
-                  _fetchLocation(); // Call method to fetch location
-                },
+                onPressed: _fetchLocation,
                 child: Text('Get Location'),
               ),
               SizedBox(height: 20),
               Text(
-                'Location: $_location', // Display fetched location
+                'Location: $_location',
                 style: TextStyle(fontSize: 18),
               ),
-              SizedBox(height: 20,),
-              ElevatedButton(
-                onPressed: () {
-                  _submitForm(); // Call function to submit form
+              SizedBox(height: 20),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: "Select your Hospital",
+                ),
+                value: _selectedHospital,
+                items: items.map((String option) {
+                  return DropdownMenuItem<String>(
+                    value: option,
+                    child: Text(option),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedHospital = newValue;
+                  });
                 },
+                validator: (value) {
+                  if (value == null) {
+                    return "Please select a hospital";
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _submitForm,
                 child: Text('Submit'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
@@ -192,10 +230,11 @@ class _DonorSidePageState extends State<DonorSidePage> {
     );
     if (_picked != null) {
       setState(() {
-        _datecontroller.text = _picked.toString().split(" ")[0];
+        _dateController.text = _picked.toString().split(" ")[0];
       });
     }
   }
+
   Future<void> _fetchLocation() async {
     String location = await _locationService.getLocation();
     setState(() {
@@ -216,20 +255,39 @@ class _DonorSidePageState extends State<DonorSidePage> {
     });
   }
 
-  Future<void> _getLocation() async {
-    String location = await _locationService.getLocation();
-    setState(() {
-      _location = location;
-    });
-  }
+  void _submitForm() async {
+    // Collect the form data
+    print(_usernameController);
+    print(_ageController);
+    print(_organNameController);
+    print(_dateController);
+    print(_selectedGender);
+    print(_selectedHospital);
+    print(_bloodgroup);
+    print(_location);
+    final formData = {
+      'username': _usernameController.text,
+      'age': _ageController.text,
+      'organName': _organNameController.text,
+      'date': _dateController.text,
+      'gender': _selectedGender,
+      'location': _location,
+      'hospital': _selectedHospital,
+    };
 
-  void _submitForm() {
-    print('Submitting form...');
-    print('Username: ${_usernameController.text}');
-    print('Age: ${_ageController.text}');
-    print('Organ Name: ${_organNameController.text}');
-    print('Phone number: ${_location}');
-    print('Date: ${_datecontroller.text}');
-    print('Gender: ${_selectedGender}');
+    // Save the form data to Firestore
+    CollectionReference donors = FirebaseFirestore.instance.collection(
+        'donors');
+    try {
+      await donors.add(formData);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Form submitted successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to submit form: $e')),
+      );
+    }
   }
 }
+
