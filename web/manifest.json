@@ -1,6 +1,6 @@
 {
-    "name": "firstproject",
-    "short_name": "firstproject",
+    "name": "organ_don_frontend",
+    "short_name": "organ_don_frontend",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
